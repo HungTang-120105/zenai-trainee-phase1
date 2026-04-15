@@ -3,7 +3,9 @@ from __future__ import print_function
 import os
 from builtins import range
 from builtins import object
+from matplotlib.image import resample
 import numpy as np
+from numpy._core.defchararray import replace
 from ..classifiers.softmax import *
 from past.builtins import xrange
 
@@ -64,8 +66,9 @@ class LinearClassifier(object):
             # Hint: Use np.random.choice to generate indices. Sampling with         #
             # replacement is faster than sampling without replacement.              #
             #########################################################################
-
-
+            idx = np.random.choice(np.arange(num_train), batch_size, replace=False )
+            X_batch = X[idx]
+            y_batch = y[idx]
             # evaluate loss and gradient
             loss, grad = self.loss(X_batch, y_batch, reg)
             loss_history.append(loss)
@@ -75,7 +78,7 @@ class LinearClassifier(object):
             # TODO:                                                                 #
             # Update the weights using the gradient and the learning rate.          #
             #########################################################################
-
+            self.W -= learning_rate * grad
 
             if verbose and it % 100 == 0:
                 print("iteration %d / %d: loss %f" % (it, num_iters, loss))
@@ -101,7 +104,8 @@ class LinearClassifier(object):
         # TODO:                                                                   #
         # Implement this method. Store the predicted labels in y_pred.            #
         ###########################################################################
-
+        y_pred = X @ self.W
+        y_pred = np.argmax(y_pred, axis = 1)
         return y_pred
 
     def loss(self, X_batch, y_batch, reg):
