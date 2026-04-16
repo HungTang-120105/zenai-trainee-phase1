@@ -40,12 +40,14 @@ def softmax_loss_naive(W, X, y, reg):
 
         loss -= logp[y[i]]  # negative log probability is the loss
         
-        one_hot = np.zeros(num_classes)
-        one_hot[y[i]] = 1
-        dw = X[i].reshape(-1,1)@ (p - one_hot).reshape(1, -1)
-        dW += dw
+        for j in range(num_classes):
+            if j == y[i]:
+                dW[:, j] -= (1 - p[j]) * X[i]
+            else:
+                dW[:, j] -= -p[j] * X[i]
+
     # normalized hinge loss plus regularization
-    loss = loss / num_train + 2 * reg * np.sum(W * W)
+    loss = loss / num_train + reg * np.sum(W * W)
     
     #############################################################################
     # TODO:                                                                     #
@@ -55,7 +57,7 @@ def softmax_loss_naive(W, X, y, reg):
     # loss is being computed. As a result you may need to modify some of the    #
     # code above to compute the gradient.                                       #
     #############################################################################
-    dW = dW / num_train + reg * W
+    dW = dW / num_train + 2*reg * W
 
     return loss, dW
 
