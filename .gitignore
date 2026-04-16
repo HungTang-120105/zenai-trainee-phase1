@@ -1,1 +1,53 @@
+# ------------------------------
+# OS / editor junk
+# ------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# ------------------------------
+# Python cache / build artifacts
+# ------------------------------
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
 *.pyc
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# ------------------------------
+# Notebook runtime artifacts
+# ------------------------------
+*.log
+*.tmp
+*.bak
+
+# ------------------------------
+# Assignment-generated outputs
+# ------------------------------
+# Submission bundles / reports
+*.zip
+*.pdf
+
+# Trained weights / checkpoints / dumps
+*.pkl
+*.pickle
+*.npz
+*.npy
+
+# Keep source notebooks and code tracked, ignore saved outputs
+assignments/**/saved/*
+!assignments/**/saved/keep.md
+
+# Large downloaded datasets (can be re-downloaded via scripts)
+assignments/**/cs231n/datasets/cifar-10-batches-py/
+assignments/**/cs231n/datasets/*.npz
