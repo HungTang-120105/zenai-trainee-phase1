@@ -51,3 +51,5 @@ assignments/**/saved/*
 # Large downloaded datasets (can be re-downloaded via scripts)
 assignments/**/cs231n/datasets/cifar-10-batches-py/
 assignments/**/cs231n/datasets/*.npz
+
+assignments/**/cs231n/datasets/coco_captioning/
