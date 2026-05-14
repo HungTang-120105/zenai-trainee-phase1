@@ -59,4 +59,5 @@ assignments/assignment2/cs231n/im2col_cython.cpython-312-x86_64-linux-gnu.so
 *.pt
 checkpoints/
 weights/
-assignments/assignment3/data/
+*.tar.gz
+*.tar.gz
