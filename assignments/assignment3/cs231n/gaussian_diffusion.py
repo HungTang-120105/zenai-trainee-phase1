@@ -102,7 +102,21 @@ class GaussianDiffusion(nn.Module):
         # Transform x_t and noise to get x_start according to Eq.(4) and Eq.(14).
         # Look at the coeffs in `__init__` method and use the `extract` function.
         ####################################################################
+        sqrt_alphas_cumprod_t = extract(
+            self.sqrt_alphas_cumprod,
+            t,
+            x_t.shape
+        )
 
+        sqrt_one_minus_alphas_cumprod_t = extract(
+            self.sqrt_one_minus_alphas_cumprod,
+            t,
+            x_t.shape
+        )
+
+        x_start = (
+            x_t - sqrt_one_minus_alphas_cumprod_t * noise
+        ) / sqrt_alphas_cumprod_t
         ####################################################################
         return x_start
 
@@ -121,7 +135,22 @@ class GaussianDiffusion(nn.Module):
         # Transform x_t and noise to get x_start according to Eq.(4) and Eq.(14).
         # Look at the coeffs in `__init__` method and use the `extract` function.
         ####################################################################
+        sqrt_alphas_cumprod_t = extract(
+            self.sqrt_alphas_cumprod,
+            t,
+            x_t.shape
+        )
 
+        sqrt_one_minus_alphas_cumprod_t = extract(
+            self.sqrt_one_minus_alphas_cumprod,
+            t,
+            x_t.shape
+        )
+
+        pred_noise = (
+            x_t - sqrt_alphas_cumprod_t * x_start
+        ) / sqrt_one_minus_alphas_cumprod_t
+        
         ####################################################################
         return pred_noise
 
@@ -172,7 +201,36 @@ class GaussianDiffusion(nn.Module):
         #   4. Get the mean and std for q(x_{t-1} | x_t, x_0) using self.q_posterior,
         #      and sample x_{t-1}.
         ##################################################################
-        
+        # 1. Model prediction
+        model_out = self.model(x_t, t, model_kwargs)
+
+        # 2. Recover x_start and noise
+        if self.objective == "pred_noise":
+            pred_noise = model_out
+            x_start = self.predict_start_from_noise(x_t, t, pred_noise)
+
+        else:
+            x_start = model_out
+            pred_noise = self.predict_noise_from_start(x_t, t, x_start)
+
+        # 3. Clamp x_start
+        x_start = x_start.clamp(-1., 1.)
+
+        # 4. Posterior q(x_{t-1} | x_t, x_0)
+        model_mean, model_std = self.q_posterior(
+            x_start=x_start,
+            x_t=x_t,
+            t=t
+        )
+
+        # Final step: no noise at t=0
+        noise = torch.randn_like(x_t)
+        nonzero_mask = (t != 0).float().view(
+            x_t.shape[0],
+            *([1] * (len(x_t.shape) - 1))
+        )
+
+        x_tm1 = model_mean + nonzero_mask * model_std * noise
         ##################################################################
 
         return x_tm1
@@ -217,7 +275,22 @@ class GaussianDiffusion(nn.Module):
         # can be done as: x_t = mu + sigma * noise where noise is sampled from N(0, 1).
         # Approximately 3 lines of code.
         ####################################################################
+        sqrt_alphas_cumprod_t = extract(
+            self.sqrt_alphas_cumprod,
+            t,
+            x_start.shape
+        )
 
+        sqrt_one_minus_alphas_cumprod_t = extract(
+            self.sqrt_one_minus_alphas_cumprod,
+            t,
+            x_start.shape
+        )
+
+        x_t = (
+            sqrt_alphas_cumprod_t * x_start
+            + sqrt_one_minus_alphas_cumprod_t * noise
+        )
         ####################################################################
         return x_t
 
@@ -238,7 +311,13 @@ class GaussianDiffusion(nn.Module):
         # Finally, compute the weighted MSE loss.
         # Approximately 3-4 lines of code.
         ####################################################################
+        x = self.q_sample(x_start=x_start, t=t, noise=noise)
 
+        pred = self.model(x, t, model_kwargs)
+
+        loss = torch.nn.functional.mse_loss(pred, target, reduction="none")
+        loss = loss * loss_weight
+        loss = loss.mean()
         ####################################################################
 
         return loss
